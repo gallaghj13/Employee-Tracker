@@ -21,6 +21,8 @@
   },
   "homepage": "https://github.com/gallaghj13/Employee-Tracker#readme",
   "dependencies": {
+    "console.table": "^0.10.0",
+    "dotenv": "^10.0.0",
     "inquirer": "^8.2.0",
     "mysql2": "^2.3.3-rc.0"
   }

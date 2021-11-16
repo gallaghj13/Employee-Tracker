@@ -27,17 +27,17 @@ const openingPrompt = () => {
         ])
         .then(({ choice }) => {
             if(choice === "View All Departments") {
-                db.query('SELECT * FROM department', function (err, results) {
+                db.query('SELECT * FROM department;', function (err, results) {
                     console.table(results);
                   });
                   return openingPrompt();
             } else if (choice === "View All Roles") {
-                db.query('SELECT * FROM roles', function (err, results) {
+                db.query('SELECT roles.id, roles.title, department.department_name AS department, roles.salary FROM roles LEFT JOIN department ON roles.department_id = department.id;', function (err, results) {
                     console.table(results);
                   });
                   return openingPrompt();
             } else if (choice === "View All Employees") {
-                db.query('SELECT * FROM employee', function (err, results) {
+                db.query('SELECT employee.id, employee.first_name, employee.last_name, roles.title, department.department_name AS department, roles.salary, CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee LEFT JOIN roles on employee.role_id = roles.id LEFT JOIN department ON roles.department_id = department.id LEFT JOIN employee manager ON employee.manager_id = manager.id;', function (err, results) {
                     console.table(results);
                   });
                   return openingPrompt();
@@ -74,6 +74,11 @@ const addDepartment = () => {
 }
 
 const addRole = () => {
+    const departmentArr = [];
+    db.query('SELECT * FROM department', function (err, results) {
+        departmentArr.push(results);
+        console.log(departmentArr);
+      });
     return inquirer
     .prompt([
         {
@@ -85,19 +90,20 @@ const addRole = () => {
             type: "input",
             name: "salary",
             message: "What is the salary for this role?",
+
         },
         {
-            type: "input",
+            type: "list",
             name: "department",
             message: "Which department does the role belong to?",
-            // choices: [Department Array]
+            choices: departmentArr
         }
     ])
-    .then(({ title, salary, department}) => {
+    .then(({ title, salary, department }) => {
         const newRole = {
             title,
             salary,
-            department
+            department: department.id
         }
         db.query('INSERT INTO roles (title, salary, department_id) VALUES (?)', newRole, (err, result) => {
             if (err) {
@@ -107,7 +113,6 @@ const addRole = () => {
         })
         return openingPrompt();
     });
-    openingPrompt();
 }
 
 const addEmployee = () => {

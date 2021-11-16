@@ -78,7 +78,7 @@ const addRole = () => {
     .prompt([
         {
             type: "input",
-            name: "name",
+            name: "title",
             message: "What is the name of the role?",
         },
         {
@@ -90,8 +90,23 @@ const addRole = () => {
             type: "input",
             name: "department",
             message: "Which department does the role belong to?",
+            // choices: [Department Array]
         }
     ])
+    .then(({ title, salary, department}) => {
+        const newRole = {
+            title,
+            salary,
+            department
+        }
+        db.query('INSERT INTO roles (title, salary, department_id) VALUES (?)', newRole, (err, result) => {
+            if (err) {
+                console.log(err);
+              }
+              console.log(result);
+        })
+        return openingPrompt();
+    });
     openingPrompt();
 }
 

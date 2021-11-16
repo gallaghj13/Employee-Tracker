@@ -62,7 +62,15 @@ const addDepartment = () => {
                 message: "What is the name of the department?",
             }
         ])
-    openingPrompt();
+        .then(({ department }) => {
+            db.query('INSERT INTO department (department_name) VALUES (?)', department, (err, result) => {
+                if (err) {
+                    console.log(err);
+                  }
+                  console.log(result);
+            })
+            return openingPrompt();
+        });
 }
 
 const addRole = () => {

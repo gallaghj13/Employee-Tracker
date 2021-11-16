@@ -1,6 +1,19 @@
 const inquirer = require("inquirer");
-const sql = require("mysql2");
+const mysql = require("mysql2");
 const consoleTable = require("console.table");
+
+// Create connection to mysql?
+require('dotenv').config();
+
+const db = mysql.createConnection(
+    {
+      host: 'localhost',
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME
+    },
+    console.log(`Connected to the company_db database.`)
+  );
 
 const openingPrompt = () => {
     return inquirer
@@ -14,11 +27,20 @@ const openingPrompt = () => {
         ])
         .then(({ choice }) => {
             if(choice === "View All Departments") {
-                // Return department names and ids
+                db.query('SELECT * FROM department', function (err, results) {
+                    console.table(results);
+                  });
+                  return openingPrompt();
             } else if (choice === "View All Roles") {
-                // Return job title, role id, the department that role belongs to, and the salary for that role
+                db.query('SELECT * FROM roles', function (err, results) {
+                    console.table(results);
+                  });
+                  return openingPrompt();
             } else if (choice === "View All Employees") {
-                // Return employee data, including employee ids, first names, last names, job titles
+                db.query('SELECT * FROM employee', function (err, results) {
+                    console.table(results);
+                  });
+                  return openingPrompt();
             } else if (choice === "Add A Department") {
                 addDepartment();
             } else if (choice === "Add A Role") {

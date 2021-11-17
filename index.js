@@ -30,17 +30,17 @@ const openingPrompt = () => {
                 db.query('SELECT * FROM department;', function (err, results) {
                     console.table(results);
                   });
-                  return openingPrompt();
+                //   return openingPrompt();
             } else if (choice === "View All Roles") {
                 db.query('SELECT roles.id, roles.title, department.department_name AS department, roles.salary FROM roles LEFT JOIN department ON roles.department_id = department.id;', function (err, results) {
                     console.table(results);
                   });
-                  return openingPrompt();
+                //   return openingPrompt();
             } else if (choice === "View All Employees") {
                 db.query('SELECT employee.id, employee.first_name, employee.last_name, roles.title, department.department_name AS department, roles.salary, CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee LEFT JOIN roles on employee.role_id = roles.id LEFT JOIN department ON roles.department_id = department.id LEFT JOIN employee manager ON employee.manager_id = manager.id;', function (err, results) {
                     console.table(results);
                   });
-                  return openingPrompt();
+                //   return openingPrompt();
             } else if (choice === "Add A Department") {
                 addDepartment();
             } else if (choice === "Add A Role") {
@@ -50,7 +50,9 @@ const openingPrompt = () => {
             } else if (choice === "Update an Employee Role") {
                 updateRole();
             }
+            // return openingPrompt();
         })
+
 };
 
 const addDepartment = () => {
@@ -73,14 +75,16 @@ const addDepartment = () => {
         });
 }
 
-const addRole = () => {
-    const departmentArr = [];
-    db.query('SELECT * FROM department', function (err, results) {
-        departmentArr.push(results);
-        console.log(departmentArr);
-      });
-    return inquirer
-    .prompt([
+function addRole() {
+    db.promise().query('SELECT * FROM department')
+    .then(([rows]) => {
+        let departments = rows;
+        const departmentChoices = departments.map(({id, department_name}) => ({
+            name: department_name,
+            value: id
+        }));
+
+        inquirer.prompt([
         {
             type: "input",
             name: "title",
@@ -96,23 +100,25 @@ const addRole = () => {
             type: "list",
             name: "department",
             message: "Which department does the role belong to?",
-            choices: departmentArr
+            choices: departmentChoices
         }
-    ])
-    .then(({ title, salary, department }) => {
+    ]).then(({ title, salary, department }) => {
         const newRole = {
             title,
             salary,
-            department: department.id
+            department_id: department
         }
-        db.query('INSERT INTO roles (title, salary, department_id) VALUES (?)', newRole, (err, result) => {
+
+        console.log(newRole)
+        db.query('INSERT INTO roles SET ?', newRole, (err, result) => {
             if (err) {
                 console.log(err);
-              }
-              console.log(result);
+                }
+                console.log(result);
         })
         return openingPrompt();
-    });
+    })
+})
 }
 
 const addEmployee = () => {
@@ -130,12 +136,28 @@ const addEmployee = () => {
         },
         {
             type: "input",
-            name: "department",
+            name: "role",
             message: "What is the employee's role?",
         }
+        // Need Role Array too?
         // Need question: Who is employee's manager? Need a way to have the options come from a managers array?
+        // managerChoices.unshift({name: "None", value: null})
+        // db.promise().query('SELECT * FROM employee WHERE manager_id IS NULL');
     ])
-    openingPrompt();
+    .then(({ first, last, role }) => {
+        const newRole = {
+            first,
+            last,
+            role,
+        }
+        db.query('INSERT INTO roles (first_name, last_name, department_id) VALUES (?)', newRole, (err, result) => {
+            if (err) {
+                console.log(err);
+              }
+              console.log(result);
+        })
+        return openingPrompt();
+    });
 }
 
 const updateRole = () => {

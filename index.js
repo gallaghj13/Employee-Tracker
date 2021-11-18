@@ -29,18 +29,19 @@ const openingPrompt = () => {
             if(choice === "View All Departments") {
                 db.query('SELECT * FROM department;', function (err, results) {
                     console.table(results);
+                    openingPrompt();
                   });
-                //   return openingPrompt();
             } else if (choice === "View All Roles") {
                 db.query('SELECT roles.id, roles.title, department.department_name AS department, roles.salary FROM roles LEFT JOIN department ON roles.department_id = department.id;', function (err, results) {
                     console.table(results);
+                    openingPrompt();
                   });
-                //   return openingPrompt();
+                
             } else if (choice === "View All Employees") {
                 db.query('SELECT employee.id, employee.first_name, employee.last_name, roles.title, department.department_name AS department, roles.salary, CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee LEFT JOIN roles on employee.role_id = roles.id LEFT JOIN department ON roles.department_id = department.id LEFT JOIN employee manager ON employee.manager_id = manager.id;', function (err, results) {
                     console.table(results);
+                    openingPrompt();
                   });
-                //   return openingPrompt();
             } else if (choice === "Add A Department") {
                 addDepartment();
             } else if (choice === "Add A Role") {
@@ -50,10 +51,9 @@ const openingPrompt = () => {
             } else if (choice === "Update an Employee Role") {
                 updateRole();
             }
-            // return openingPrompt();
         })
-
 };
+
 
 const addDepartment = () => {
     return inquirer
@@ -173,7 +173,7 @@ const addEmployee = () => {
             ])
         .then((data) => {
             let manager = data.manager;
-            db.query('INSERT INTO employee SET ?', [firstName, lastName, employeeRole, manager], (err, result) => {
+            db.query('INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)', [firstName, lastName, employeeRole, manager], (err, result) => {
                 if(err) {
                     console.log(err);
                 }
@@ -184,20 +184,51 @@ const addEmployee = () => {
     }
 
 const updateRole = () => {
-    return inquirer
-    .prompt([
-        {
-            type: "input",
-            name: "name",
-            message: "Which employee's role do you want to update?",
-        },
-        {
-            type: "input",
-            name: "role",
-            message: "What role do you want to assign to the selected employee?",
-        }
-    ])
-    openingPrompt();
+    db.promise().query('SELECT * FROM employee')
+    .then(([rows]) => {
+        let employees = rows;
+        const employeeChoices = employees.map(({ first_name, last_name, id}) => ({
+            name: first_name + ' ' + last_name,
+            value: id
+        }));
+        inquirer.prompt([
+            {
+                type: "list",
+                name: "update",
+                message: "Which employee would you like to update?",
+                choices: employeeChoices
+            }
+        ])
+        .then((data) => {
+            let employee = data.update
+            db.promise().query('SELECT * FROM roles')
+            .then((data) => {
+                let roles = data;
+                const roleChoices = roles.map(({ title, id}) => ({
+                    name: title,
+                    value: id
+                }));
+                inquirer.prompt([
+                    {
+                        type: "list",
+                        name: "role",
+                        message: "What is this employee's new role?",
+                        choices: roleChoices
+                    }
+                ])
+                .then((data) => {
+                    let newRole = data.role;
+                    db.query('UPDATE employee SET role_id = ? WHERE id = ?', [newRole, employee], (err, result) => {
+                        if(err) {
+                            console.log(err);
+                        }
+                        console.log(result);
+                    })
+                    return openingPrompt();
+                })
+            })
+        })
+    })
 }
 
 openingPrompt();

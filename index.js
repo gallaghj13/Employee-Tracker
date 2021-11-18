@@ -122,43 +122,66 @@ function addRole() {
 }
 
 const addEmployee = () => {
-    return inquirer
-    .prompt([
-        {
-            type: "input",
-            name: "first",
-            message: "What is the employee's first name?",
-        },
-        {
-            type: "input",
-            name: "last",
-            message: "What is the employee's last name??",
-        },
-        {
-            type: "input",
-            name: "role",
-            message: "What is the employee's role?",
-        }
-        // Need Role Array too?
-        // Need question: Who is employee's manager? Need a way to have the options come from a managers array?
-        // managerChoices.unshift({name: "None", value: null})
-        // db.promise().query('SELECT * FROM employee WHERE manager_id IS NULL');
-    ])
-    .then(({ first, last, role }) => {
-        const newRole = {
-            first,
-            last,
-            role,
-        }
-        db.query('INSERT INTO roles (first_name, last_name, department_id) VALUES (?)', newRole, (err, result) => {
-            if (err) {
-                console.log(err);
-              }
-              console.log(result);
-        })
-        return openingPrompt();
-    });
-}
+    db.promise().query('SELECT * FROM roles')
+    .then(([rows]) => {
+        let roles = rows;
+        const roleChoices = roles.map(({ title, id}) => ({
+            name: title,
+            value: id
+        }));
+        inquirer.prompt([
+            {
+                type: "input",
+                name: "first",
+                message: "What is the employee's first name?",
+            },
+            {
+                type: "input",
+                name: "last",
+                message: "What is the employee's last name??",
+            },
+            {
+                type: "list",
+                name: "role",
+                message: "What is the employee's role?",
+                choices: roleChoices
+            }
+            // Need Role Array too?
+            // Need question: Who is employee's manager? Need a way to have the options come from a managers array?
+            // managerChoices.unshift({name: "None", value: null})
+            // db.promise().query('SELECT * FROM employee WHERE manager_id IS NULL');
+        ])
+        .then((data) => {
+            let firstName = data.first;
+            let lastName = data.last;
+            let employeeRole = data.role;
+
+            db.promise().query('SELECT * FROM employee')
+            .then(([rows]) => {
+                let employees = rows;
+                const employeeArr = employees.map(({ first_name, last_name, id}) => ({
+                    name: first_name + ' ' + last_name,
+                    value: id
+                }));
+            inquirer.prompt([
+                {
+                    type: "list",
+                    name: "manager",
+                    message: "Who is the employee's manager?",
+                    choices: employeeArr
+                }
+            ])
+        .then((data) => {
+            let manager = data.manager;
+            db.query('INSERT INTO employee SET ?', [firstName, lastName, employeeRole, manager], (err, result) => {
+                if(err) {
+                    console.log(err);
+                }
+                    console.log(result);
+            })
+            return openingPrompt();
+        })})})})
+    }
 
 const updateRole = () => {
     return inquirer

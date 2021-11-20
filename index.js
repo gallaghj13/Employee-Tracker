@@ -48,7 +48,8 @@ const openingPrompt = () => {
                 addRole();
             } else if (choice === "Add An Employee") {
                 addEmployee();
-            } else if (choice === "Update an Employee Role") {
+            } else if (choice === "Update An Employee Role") {
+                console.log("update role");
                 updateRole();
             }
         })

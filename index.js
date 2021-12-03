@@ -203,7 +203,7 @@ const updateRole = () => {
         .then((data) => {
             let employee = data.update
             db.promise().query('SELECT * FROM roles')
-            .then((data) => {
+            .then(([data]) => {
                 let roles = data;
                 const roleChoices = roles.map(({ title, id}) => ({
                     name: title,
